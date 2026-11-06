@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎲 創意美食故事骰子 - 一頁式展示與遊戲平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cute: {
+                            pink: '#ffb3c6',
+                            yellow: '#ffec99',
+                            orange: '#ffc078',
+                            green: '#b2f2bb',
+                            blue: '#a5d8ff',
+                            purple: '#eebefa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #fff9db 0%, #fff0f6 50%, #e6fcf5 100%);
+            min-height: 100vh;
+            color: #2b2c34;
+        }
+
+        /* Cute 3D Scene setup */
+        .dice-scene {
+            perspective: 600px;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        @media (min-width: 640px) {
+            .dice-scene {
+                width: 110px;
+                height: 110px;
+            }
+        }
+
+        /* Cute 3D Dice Container */
+        .dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 2.8s cubic-bezier(0.12, 0.88, 0.3, 1.05);
+            cursor: pointer;
+        }
+
+        /* Cute Dice Faces */
+        .dice-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 22px;
+            background: #ffffff;
+            border: 4px solid #ff922b;
+            box-shadow: inset 0 0 10px rgba(255, 146, 43, 0.15), 0 8px 16px rgba(255, 146, 43, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            backface-visibility: hidden;
+            padding: 6px;
+            box-sizing: border-box;
+        }
+
+        /* Lock Overlay */
+        .dice-locked .dice-face {
+            border-color: #fcc419;
+            background: #fff9db;
+            box-shadow: 0 0 20px rgba(252, 196, 25, 0.8), inset 0 0 10px rgba(252, 196, 25, 0.4);
+        }
+
+        /* 3D Positions (100px) */
+        .face-1 { transform: rotateY(0deg) translateZ(50px); }
+        .face-2 { transform: rotateY(180deg) translateZ(50px); }
+        .face-3 { transform: rotateY(-90deg) translateZ(50px); }
+        .face-4 { transform: rotateY(90deg) translateZ(50px); }
+        .face-5 { transform: rotateX(90deg) translateZ(50px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(50px); }
+
+        @media (min-width: 640px) {
+            .face-1 { transform: rotateY(0deg) translateZ(55px); }
+            .face-2 { transform: rotateY(180deg) translateZ(55px); }
+            .face-3 { transform: rotateY(-90deg) translateZ(55px); }
+            .face-4 { transform: rotateY(90deg) translateZ(55px); }
+            .face-5 { transform: rotateX(90deg) translateZ(55px); }
+            .face-6 { transform: rotateX(-90deg) translateZ(55px); }
+        }
+
+        /* Rolling Shadow Effects */
+        .shadow-glow {
+            width: 80px;
+            height: 12px;
+            background: rgba(255, 146, 43, 0.3);
+            border-radius: 50%;
+            margin: 10px auto 0 auto;
+            filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .rolling-shadow {
+            animation: shadowPulse 0.4s infinite alternate ease-in-out;
+        }
+
+        @keyframes shadowPulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(0.4); opacity: 0.15; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fff3bf;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff922b;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800">
+
+    <!-- Bright Cute Navigation -->
+    <nav class="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b-2 border-orange-200 px-4 py-3 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2 font-black text-xl text-orange-500 hover:scale-105 transition-transform">
+                <span class="text-3xl animate-bounce">🎲</span>
+                <span class="tracking-wide text-orange-600">美食故事骰子樂園</span>
+            </a>
+            <div class="flex items-center gap-2 md:gap-3 text-xs md:text-sm font-bold">
+                <a href="#history" class="px-3 py-1.5 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-full transition-all flex items-center gap-1">
+                    📖 歷程
+                </a>
+                <a href="#game" class="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-full transition-all flex items-center gap-1 shadow-sm">
+                    🎮 玩遊戲
+                </a>
+                <a href="#community" class="px-3 py-1.5 bg-pink-100 hover:bg-pink-200 text-pink-700 rounded-full transition-all flex items-center gap-1">
+                    💬 社群
+                </a>
+                <a href="#feedback" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 rounded-full transition-all flex items-center gap-1">
+                    ✍️ 回饋
+                </a>
+                <button onclick="openApiKeyModal()" class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-full border border-purple-300 transition-all">
+                    🔑 <span id="navApiKeyStatus">API Key</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Bright Hero Banner -->
+    <header class="py-10 md:py-14 px-4 text-center max-w-4xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-white text-orange-600 font-bold rounded-full text-xs md:text-sm border-2 border-orange-200 shadow-md mb-4">
+            ✨ 創意 × 21種爆款美食 × AI 繪本 ✨
+        </div>
+        <h1 class="text-3xl md:text-5xl font-black tracking-tight text-orange-600 mb-3 drop-shadow-sm">
+            🍦 5D 美食故事骰子冒險 🍧
+        </h1>
+        <p class="text-slate-600 text-sm md:text-base max-w-2xl mx-auto font-medium leading-relaxed">
+            螺絲粉、芋泥啵啵、奧利奧雪糕！輕輕一搖，抽取 5 種美食 🍜，讓 Gemini AI 幫你寫出超爆笑短劇與插畫！🎨
+        </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-3">
+            <a href="#game" class="px-8 py-3.5 bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 hover:scale-105 active:scale-95 text-slate-900 font-black text-base rounded-3xl shadow-lg shadow-orange-300/50 transition-all flex items-center gap-2">
+                🚀 開始搖骰創作！
+            </a>
+            <a href="#community" class="px-6 py-3.5 bg-white hover:bg-orange-50 text-orange-600 font-bold text-sm rounded-3xl border-2 border-orange-200 shadow-sm transition-all flex items-center gap-2">
+                👥 逛創作社群
+            </a>
+        </div>
+    </header>
+
+    <!-- Visual Journey Section (Lots of Cute Icons) -->
+    <section id="history" class="py-12 px-4 bg-white/60 border-y-2 border-orange-100">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl md:text-3xl font-black text-orange-600 flex items-center justify-center gap-2">
+                    🌟 遊戲成長與創意歷程 🌟
+                </h2>
+                <p class="text-xs text-slate-500 font-bold mt-1">從實驗室磁鐵分粉到 21 種美味點心的創意遊戲平台！</p>
+            </div>
+
+            <!-- Cute Icon Grid Timeline -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Stage 1 -->
+                <div class="bg-white border-2 border-amber-200 p-5 rounded-3xl flex flex-col items-center text-center shadow-md hover:scale-105 transition-all">
+                    <div class="w-16 h-16 bg-amber-100 rounded-3xl flex items-center justify-center text-3xl mb-3 border border-amber-300 shadow-inner">
+                        🧪🧲
+                    </div>
+                    <span class="text-[10px] font-black text-amber-700 bg-amber-200 px-3 py-0.5 rounded-full mb-1">STEP 1</span>
+                    <h3 class="font-extrabold text-sm text-slate-800 mb-1">實驗室的小奇蹟</h3>
+                    <p class="text-xs text-slate-500 font-medium">
+                        打翻糖粉與鐵粉，磁鐵一秒分離！觸發「分類與組合」美食遊戲靈感！
+                    </p>
+                </div>
+
+                <!-- Stage 2 -->
+                <div class="bg-white border-2 border-orange-200 p-5 rounded-3xl flex flex-col items-center text-center shadow-md hover:scale-105 transition-all">
+                    <div class="w-16 h-16 bg-orange-100 rounded-3xl flex items-center justify-center text-3xl mb-3 border border-orange-300 shadow-inner">
+                        🎲🍜
+                    </div>
+                    <span class="text-[10px] font-black text-orange-700 bg-orange-200 px-3 py-0.5 rounded-full mb-1">STEP 2</span>
+                    <h3 class="font-extrabold text-sm text-slate-800 mb-1">3D 美食故事骰</h3>
+                    <p class="text-xs text-slate-500 font-medium">
+                        打造 3D 旋轉骰子，把螺絲粉、辣條與火雞面等經典美食放進故事裡！
+                    </p>
+                </div>
+
+                <!-- Stage 3 -->
+                <div class="bg-white border-2 border-emerald-200 p-5 rounded-3xl flex flex-col items-center text-center shadow-md hover:scale-105 transition-all">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-3xl flex items-center justify-center text-3xl mb-3 border border-emerald-300 shadow-inner">
+                        🖐️🔒
+                    </div>
+                    <span class="text-[10px] font-black text-emerald-700 bg-emerald-200 px-3 py-0.5 rounded-full mb-1">STEP 3</span>
+                    <h3 class="font-extrabold text-sm text-slate-800 mb-1">五骰與鎖定玩法</h3>
+                    <p class="text-xs text-slate-500 font-medium">
+                        升級為 5 顆故事骰子，加入「🔒 鎖定」按鈕，想保留誰就保留誰！
+                    </p>
+                </div>
+
+                <!-- Stage 4 -->
+                <div class="bg-white border-2 border-pink-200 p-5 rounded-3xl flex flex-col items-center text-center shadow-md hover:scale-105 transition-all">
+                    <div class="w-16 h-16 bg-pink-100 rounded-3xl flex items-center justify-center text-3xl mb-3 border border-pink-300 shadow-inner">
+                        🤖🎨
+                    </div>
+                    <span class="text-[10px] font-black text-pink-700 bg-pink-200 px-3 py-0.5 rounded-full mb-1">STEP 4</span>
+                    <h3 class="font-extrabold text-sm text-slate-800 mb-1">Gemini AI 繪本</h3>
+                    <p class="text-xs text-slate-500 font-medium">
+                        自動生成無厘頭爆笑劇本，再用 Imagen 生動繪製彩色故事插畫！
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Main Platform Section -->
+    <main id="game" class="max-w-6xl mx-auto w-full flex-1 flex flex-col gap-6 p-4 my-2 scroll-mt-20">
+        
+        <div class="text-center mb-1">
+            <h2 class="text-2xl md:text-3xl font-black text-orange-600 inline-flex items-center gap-2">
+                🎮 美食故事骰子遊樂場 🍡
+            </h2>
+            <p class="text-xs text-slate-500 font-bold mt-1">按下搖滾按鈕或按空白鍵開啟冒險！</p>
+        </div>
+
+        <!-- 5 Dice Display Stage -->
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-4 md:p-6 shadow-xl border-2 border-orange-200 flex flex-col items-center justify-between relative overflow-hidden">
+            
+            <div class="w-full flex justify-between items-center mb-3 z-10">
+                <span class="text-xs font-bold text-orange-500 flex items-center gap-1">
+                    ✨ 5D 搖滾舞台
+                </span>
+                <span class="text-xs font-bold text-slate-500 hidden sm:inline">
+                    💡 按「🔒 鎖定」可固定食物，重搖其它骰子！
+                </span>
+            </div>
+
+            <!-- 5 Dice Grid -->
+            <div class="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 my-2 py-2 z-10">
+                
+                <!-- Dice 0 -->
+                <div class="flex flex-col items-center group">
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold text-orange-700 bg-orange-100 px-2 py-0.5 rounded-full border border-orange-300">1. 地點背景</span>
+                        <button onclick="toggleLock(0)" id="lockBtn-0" class="text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-100">
+                            🔒
+                        </button>
+                    </div>
+                    <div class="dice-scene" id="diceContainer-0" onclick="rollSingleDice(0)">
+                        <div id="dice-0" class="dice"></div>
+                    </div>
+                    <div id="shadow-0" class="shadow-glow"></div>
+                </div>
+
+                <!-- Dice 1 -->
+                <div class="flex flex-col items-center group">
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">2. 故事主角</span>
+                        <button onclick="toggleLock(1)" id="lockBtn-1" class="text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-100">
+                            🔒
+                        </button>
+                    </div>
+                    <div class="dice-scene" id="diceContainer-1" onclick="rollSingleDice(1)">
+                        <div id="dice-1" class="dice"></div>
+                    </div>
+                    <div id="shadow-1" class="shadow-glow"></div>
+                </div>
+
+                <!-- Dice 2 -->
+                <div class="flex flex-col items-center group">
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">3. 關鍵道具</span>
+                        <button onclick="toggleLock(2)" id="lockBtn-2" class="text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-100">
+                            🔒
+                        </button>
+                    </div>
+                    <div class="dice-scene" id="diceContainer-2" onclick="rollSingleDice(2)">
+                        <div id="dice-2" class="dice"></div>
+                    </div>
+                    <div id="shadow-2" class="shadow-glow"></div>
+                </div>
+
+                <!-- Dice 3 -->
+                <div class="flex flex-col items-center group">
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-300">4. 衝突挑戰</span>
+                        <button onclick="toggleLock(3)" id="lockBtn-3" class="text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-100">
+                            🔒
+                        </button>
+                    </div>
+                    <div class="dice-scene" id="diceContainer-3" onclick="rollSingleDice(3)">
+                        <div id="dice-3" class="dice"></div>
+                    </div>
+                    <div id="shadow-3" class="shadow-glow"></div>
+                </div>
+
+                <!-- Dice 4 -->
+                <div class="flex flex-col items-center group col-span-2 sm:col-span-1">
+                    <div class="flex items-center gap-1 mb-2">
+                        <span class="text-[10px] font-extrabold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-300">5. 奇幻轉折</span>
+                        <button onclick="toggleLock(4)" id="lockBtn-4" class="text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-100">
+                            🔒
+                        </button>
+                    </div>
+                    <div class="dice-scene" id="diceContainer-4" onclick="rollSingleDice(4)">
+                        <div id="dice-4" class="dice"></div>
+                    </div>
+                    <div id="shadow-4" class="shadow-glow"></div>
+                </div>
+
+            </div>
+
+            <!-- Roll Controls -->
+            <div class="w-full text-center mt-4 z-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button id="rollAllBtn" onclick="rollAllDice()" class="w-full sm:w-auto min-w-[260px] bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 hover:from-orange-500 hover:to-yellow-500 active:scale-95 text-slate-900 font-black text-lg py-3.5 px-8 rounded-2xl shadow-lg shadow-orange-300/60 transition-all flex items-center justify-center gap-2">
+                    🎲 搖滾擲骰！(未鎖定)
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-2 font-bold z-10">按 <kbd class="px-2 py-0.5 bg-orange-100 border border-orange-300 rounded text-orange-700 font-black">Space</kbd> 空白鍵搖動骰子</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Result AI Story Card -->
+            <div id="resultCard" class="lg:col-span-7 bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border-2 border-orange-200">
+                
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-orange-100">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">✨</span>
+                        <span class="font-black text-base text-orange-600">AI 故事靈感創作</span>
+                    </div>
+                    
+                    <!-- Story Style Selector -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs text-slate-500 font-bold">風格：</label>
+                        <select id="storyStyleSelect" class="bg-amber-50 border border-amber-300 rounded-xl px-2.5 py-1 text-xs text-orange-700 font-black focus:outline-none focus:border-orange-500">
+                            <option value="爆笑無厘頭喜劇">🤪 爆笑無厘頭</option>
+                            <option value="古裝仙俠熱血">⚔️ 武俠仙俠</option>
+                            <option value="賽博朋克科幻冒險">🚀 科幻冒險</option>
+                            <option value="校園甜蜜戀愛喜劇">💖 校園喜劇</option>
+                            <option value="懸疑美食推理">🔍 美食推理</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Empty Placeholder -->
+                <div id="resultPlaceholder" class="text-center py-10 text-slate-400">
+                    <span class="text-5xl mb-2 block animate-pulse">🍱</span>
+                    <p class="text-sm font-bold text-slate-500">點擊「擲骰子」選擇 5 個美味元素，開啟 AI 自動創作！</p>
+                </div>
+
+                <!-- Active Content -->
+                <div id="resultContent" class="hidden flex flex-col gap-4">
+                    
+                    <!-- 5 Picked Food Items Badges -->
+                    <div class="grid grid-cols-5 gap-1.5">
+                        <div class="bg-orange-50 p-2 rounded-xl border border-orange-200 text-center">
+                            <div id="resEmoji0" class="text-lg md:text-xl">🍜</div>
+                            <div id="resName0" class="font-black text-[10px] text-orange-700 mt-0.5 truncate">螺絲粉</div>
+                        </div>
+                        <div class="bg-amber-50 p-2 rounded-xl border border-amber-200 text-center">
+                            <div id="resEmoji1" class="text-lg md:text-xl">🥢</div>
+                            <div id="resName1" class="font-black text-[10px] text-amber-700 mt-0.5 truncate">辣條</div>
+                        </div>
+                        <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200 text-center">
+                            <div id="resEmoji2" class="text-lg md:text-xl">🔥</div>
+                            <div id="resName2" class="font-black text-[10px] text-emerald-700 mt-0.5 truncate">火雞麵</div>
+                        </div>
+                        <div class="bg-rose-50 p-2 rounded-xl border border-rose-200 text-center">
+                            <div id="resEmoji3" class="text-lg md:text-xl">🍲</div>
+                            <div id="resName3" class="font-black text-[10px] text-rose-700 mt-0.5 truncate">自熱火鍋</div>
+                        </div>
+                        <div class="bg-purple-50 p-2 rounded-xl border border-purple-200 text-center">
+                            <div id="resEmoji4" class="text-lg md:text-xl">🍡</div>
+                            <div id="resName4" class="font-black text-[10px] text-purple-700 mt-0.5 truncate">糖葫蘆</div>
+                        </div>
+                    </div>
+
+                    <!-- AI Actions Row -->
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <button id="generateAiStoryBtn" onclick="generateAIStory()" class="flex-1 py-3 px-4 bg-gradient-to-r from-orange-400 to-amber-400 hover:from-orange-500 hover:to-amber-500 text-slate-900 font-black text-sm rounded-xl transition-all shadow-md shadow-orange-200 flex items-center justify-center gap-2">
+                            ⚡ 生成 Gemini 爆笑故事
+                        </button>
+                    </div>
+
+                    <!-- Story Display Box -->
+                    <div id="storyBox" class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 min-h-[140px] relative">
+                        <div id="storyLoading" class="hidden flex flex-col items-center justify-center py-8 text-orange-600 gap-2">
+                            <i class="fa-solid fa-spinner fa-spin text-3xl"></i>
+                            <p class="text-xs font-bold animate-pulse">Gemini AI 正在發揮想像力撰寫故事...</p>
+                        </div>
+                        <p id="combinedStoryText" class="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                            點擊上方「生成 Gemini 爆笑故事」開始創作！
+                        </p>
+                    </div>
+
+                    <!-- AI Image Generation Section -->
+                    <div class="bg-pink-50/60 p-4 rounded-2xl border border-pink-200 flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-pink-700 flex items-center gap-1.5">
+                                🎨 AI 故事繪本插畫 (Imagen)
+                            </span>
+                            <button id="generateImageBtn" onclick="generateAIIllustration()" class="px-3 py-1.5 bg-pink-200 hover:bg-pink-300 text-pink-800 border border-pink-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
+                                🖌️ 製作彩色插畫
+                            </button>
+                        </div>
+
+                        <!-- Image Preview Box -->
+                        <div id="imageBox" class="w-full min-h-[200px] bg-white rounded-xl border border-pink-200 flex items-center justify-center overflow-hidden relative shadow-inner">
+                            <div id="imagePlaceholder" class="text-center p-6 text-slate-400">
+                                <span class="text-3xl mb-1 block">🖼️</span>
+                                <p class="text-xs font-bold">點擊「製作彩色插畫」，讓 Imagen 畫出故事圖畫！</p>
+                            </div>
+                            <div id="imageLoading" class="hidden flex flex-col items-center justify-center py-10 text-pink-500 gap-2">
+                                <i class="fa-solid fa-circle-notch fa-spin text-3xl"></i>
+                                <p class="text-xs font-bold animate-pulse">AI 正在畫圖中...</p>
+                            </div>
+                            <img id="generatedImg" class="hidden w-full h-auto object-cover rounded-xl" alt="AI Generated Illustration">
+                        </div>
+                    </div>
+
+                    <!-- Copy Bar -->
+                    <div class="flex gap-2">
+                        <button onclick="copyStory()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-slate-200">
+                            📋 複製故事文字
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customization Panel for 5 Dice -->
+            <div class="lg:col-span-5 bg-white/90 backdrop-blur-xl rounded-3xl p-5 shadow-xl border-2 border-orange-200">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-black text-orange-600 flex items-center gap-1.5">
+                        ⚙️ 自訂骰子面 (5顆)
+                    </h2>
+                    <button onclick="resetAllPresets()" class="text-xs text-slate-400 hover:text-orange-600 font-bold transition-colors">重置預設</button>
+                </div>
+
+                <!-- Dice Tabs (1 to 5) -->
+                <div class="flex bg-orange-100/60 p-1 rounded-2xl mb-3 gap-1">
+                    <button id="tab-0" onclick="switchDiceTab(0)" class="flex-1 py-1 text-[11px] font-black rounded-xl transition-all bg-orange-400 text-slate-900 shadow-sm">
+                        1
+                    </button>
+                    <button id="tab-1" onclick="switchDiceTab(1)" class="flex-1 py-1 text-[11px] font-bold rounded-xl transition-all text-slate-500 hover:text-slate-800">
+                        2
+                    </button>
+                    <button id="tab-2" onclick="switchDiceTab(2)" class="flex-1 py-1 text-[11px] font-bold rounded-xl transition-all text-slate-500 hover:text-slate-800">
+                        3
+                    </button>
+                    <button id="tab-3" onclick="switchDiceTab(3)" class="flex-1 py-1 text-[11px] font-bold rounded-xl transition-all text-slate-500 hover:text-slate-800">
+                        4
+                    </button>
+                    <button id="tab-4" onclick="switchDiceTab(4)" class="flex-1 py-1 text-[11px] font-bold rounded-xl transition-all text-slate-500 hover:text-slate-800">
+                        5
+                    </button>
+                </div>
+
+                <!-- Face Inputs Container -->
+                <div id="faceInputsContainer" class="grid grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
+                    <!-- Dynamic inputs injected by JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- NEW SECTION: Project Community Zone -->
+    <section id="community" class="py-12 px-4 bg-white/80 border-t-2 border-orange-100 my-6 scroll-mt-20">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl md:text-3xl font-black text-orange-600 flex items-center justify-center gap-2">
+                    💬 玩家創作與交流社群 👥
+                </h2>
+                <p class="text-xs text-slate-500 font-bold mt-1">查看同好擲出的神仙美食故事，加入專屬創作者社群！</p>
+            </div>
+
+            <!-- Community Highlights Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                
+                <!-- Story Card 1 -->
+                <div class="bg-amber-50/80 p-5 rounded-3xl border-2 border-amber-200 shadow-sm relative flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-black text-orange-600 bg-orange-100 px-2.5 py-0.5 rounded-full">🔥 今日熱門故事</span>
+                            <span class="text-xs text-slate-400 font-bold">@芋泥控小王</span>
+                        </div>
+                        <p class="text-xs text-slate-700 font-medium leading-relaxed my-2">
+                            「深夜在吃【豬肉泡菜披薩】時，突然跳出一隻狂喝【芋泥啵啵】的珍珠魔法精靈，非要拿【奧利奧雪糕】跟我換披薩邊緣...！爆笑到不行！肚子都餓了😂」
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-amber-200/60 pt-3 mt-2 text-xs font-bold text-slate-500">
+                        <span>🏷️ 豬肉泡菜披薩 + 芋泥啵啵</span>
+                        <span class="text-orange-500">❤️ 328 讚</span>
+                    </div>
+                </div>
+
+                <!-- Story Card 2 -->
+                <div class="bg-pink-50/80 p-5 rounded-3xl border-2 border-pink-200 shadow-sm relative flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-black text-pink-600 bg-pink-100 px-2.5 py-0.5 rounded-full">✨ 武俠美食風</span>
+                            <span class="text-xs text-slate-400 font-bold">@吃貨大俠</span>
+                        </div>
+                        <p class="text-xs text-slate-700 font-medium leading-relaxed my-2">
+                            「手握【羊肉串】劍法，闖蕩江湖！遇上【螺絲粉】幫主的【辣條】軟鞭考驗，最後靠喝【桃子冰茶】解辣成功登頂美食盟主！」
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-pink-200/60 pt-3 mt-2 text-xs font-bold text-slate-500">
+                        <span>🏷️ 羊肉串 + 螺絲粉</span>
+                        <span class="text-pink-500">❤️ 256 讚</span>
+                    </div>
+                </div>
+
+                <!-- Story Card 3 -->
+                <div class="bg-purple-50/80 p-5 rounded-3xl border-2 border-purple-200 shadow-sm relative flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-black text-purple-600 bg-purple-100 px-2.5 py-0.5 rounded-full">🧁 甜點轉折故事</span>
+                            <span class="text-xs text-slate-400 font-bold">@甜品甜點師</span>
+                        </div>
+                        <p class="text-xs text-slate-700 font-medium leading-relaxed my-2">
+                            「主角把【提拉米蘇】跟【冰淇淋蛋糕】融合，意外做出了傳說中的【奶團丸子】！整間學校的人都被甜點魔法吸引過來啦～」
+                        </p>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-purple-200/60 pt-3 mt-2 text-xs font-bold text-slate-500">
+                        <span>🏷️ 提拉米蘇 + 水果撈</span>
+                        <span class="text-purple-500">❤️ 412 讚</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Social Links Banner -->
+            <div class="bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-300 rounded-3xl p-6 text-slate-900 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-4xl">📢</span>
+                    <div>
+                        <h3 class="font-black text-lg">加入美食故事骰子交流 Discord & Line 社群</h3>
+                        <p class="text-xs font-bold opacity-80">分享你的 AI 爆笑故事、許願新食物圖案、參加每週美食腦洞大賽！</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="showToast('🎉 Discord 邀請連結已複製！')" class="flex-1 md:flex-none px-5 py-2.5 bg-slate-900 text-white font-black text-xs rounded-2xl hover:scale-105 transition-transform">
+                        👾 Discord 社群
+                    </button>
+                    <button onclick="showToast('🎉 Line 討論群連結已複製！')" class="flex-1 md:flex-none px-5 py-2.5 bg-emerald-600 text-white font-black text-xs rounded-2xl hover:scale-105 transition-transform">
+                        💬 Line 討論群
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: Interactive Feedback Portal -->
+    <section id="feedback" class="py-12 px-4 max-w-4xl mx-auto my-4 scroll-mt-20">
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-6 md:p-8 border-2 border-emerald-200 shadow-xl">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-black text-emerald-600 inline-flex items-center gap-2">
+                    ✍️ 玩家內容回饋與意見許願池 💌
+                </h2>
+                <p class="text-xs text-slate-500 font-bold mt-1">你的建議是我們加入更多美食與升級 AI 故事的動力！</p>
+            </div>
+
+            <form onsubmit="handleFeedbackSubmit(event)" class="flex flex-col gap-4">
+                
+                <!-- Rating -->
+                <div class="flex flex-col items-center gap-1">
+                    <label class="text-xs font-black text-slate-600">給這個美食故事骰子遊戲打分：</label>
+                    <div class="flex gap-2 text-2xl text-amber-400 cursor-pointer">
+                        <span onclick="setRating(1)" class="star-icon">⭐</span>
+                        <span onclick="setRating(2)" class="star-icon">⭐</span>
+                        <span onclick="setRating(3)" class="star-icon">⭐</span>
+                        <span onclick="setRating(4)" class="star-icon">⭐</span>
+                        <span onclick="setRating(5)" class="star-icon">⭐</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-extrabold text-slate-600 mb-1 block">暱稱：</label>
+                        <input type="text" placeholder="例：美食探險家" required class="w-full bg-orange-50/50 border border-orange-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-orange-400 font-bold">
+                    </div>
+                    <div>
+                        <label class="text-xs font-extrabold text-slate-600 mb-1 block">想許願的新食物：</label>
+                        <input type="text" placeholder="例：麻辣香鍋、螺絲粉特辣版" class="w-full bg-orange-50/50 border border-orange-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-orange-400 font-bold">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-extrabold text-slate-600 mb-1 block">遊戲體驗回饋或故事心得：</label>
+                    <textarea rows="3" placeholder="告訴我們你覺得最爆笑的美食故事組合，或是建議的功能！" required class="w-full bg-orange-50/50 border border-orange-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-orange-400 font-medium"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm rounded-2xl shadow-md transition-all">
+                    🚀 送出回饋與許願
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-10 py-6 text-center text-xs font-bold text-orange-800/60 border-t border-orange-200">
+        <p>🎲 美食故事骰子遊戲樂園 &copy; 2026. All rights reserved.</p>
+    </footer>
+
+    <!-- API Key Modal -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-orange-200 flex flex-col gap-4">
+            <div class="flex justify-between items-center pb-2 border-b border-orange-100">
+                <h3 class="font-black text-sm text-orange-600 flex items-center gap-2">
+                    🔑 設定 Gemini API Key
+                </h3>
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <p class="text-xs text-slate-600 font-medium leading-relaxed">
+                欲使用 AI 故事生成與插畫功能，請輸入您的 Google Gemini API Key。 Key 將安全儲存於您的瀏覽器中。
+            </p>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-extrabold text-slate-500">API Key</label>
+                <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-orange-400">
+            </div>
+
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-orange-500 hover:underline font-bold flex items-center gap-1">
+                👉 免費前往 Google AI Studio 申請 API Key
+            </a>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-orange-100">
+                <button onclick="saveApiKey()" class="bg-orange-400 hover:bg-orange-500 text-slate-900 font-black px-5 py-2 rounded-xl text-xs transition-colors shadow-sm">
+                    儲存設定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preset Selection Modal -->
+    <div id="presetsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border-2 border-orange-200 max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center pb-3 border-b border-orange-100">
+                <h3 class="font-black text-sm text-orange-600 flex items-center gap-2">
+                    🍡 美食與點心圖庫 (25種)
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <p class="text-xs text-slate-500 font-bold my-2">點擊以下美食快速更換：</p>
+            
+            <div id="presetFoodList" class="overflow-y-auto flex-1 grid grid-cols-3 gap-2 p-1">
+                <!-- Preset items injected by JS -->
+            </div>
+
+            <div class="pt-3 border-t border-orange-100 mt-3 flex justify-end">
+                <button onclick="closeModal()" class="bg-orange-400 hover:bg-orange-500 text-slate-900 font-black px-4 py-1.5 rounded-xl text-xs transition-colors">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-slate-100 border border-slate-700 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center gap-2">
+        <span id="toastMsg">通知訊息</span>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer for Dice Sound Effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playDiceRollSound() {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(180 + Math.random() * 200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50 + Math.random() * 30, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playVictorySound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                gain.gain.setValueAtTime(0.15, now + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now + i * 0.1);
+                osc.stop(now + i * 0.1 + 0.3);
+            });
+        }
+
+        // Expanded Food Preset Library (25 Requested Foods)
+        const foodLibrary = [
+            { name: "螺絲粉", emoji: "🍜" },
+            { name: "辣條", emoji: "🥢" },
+            { name: "火雞面", emoji: "🔥" },
+            { name: "自熱火鍋", emoji: "🍲" },
+            { name: "泡麵", emoji: "🍜" },
+            { name: "羊肉串", emoji: "🍢" },
+            { name: "雞肉串", emoji: "🍡" },
+            { name: "糖葫蘆", emoji: "🍡" },
+            { name: "慕斯蛋糕", emoji: "🍰" },
+            { name: "提拉米蘇", emoji: "🧁" },
+            { name: "柳橙果粒加椰果", emoji: "🍹" },
+            { name: "珍珠奶茶", emoji: "🧋" },
+            { name: "奶團丸子", emoji: "🍡" },
+            { name: "芋泥啵啵", emoji: "🍧" },
+            { name: "布丁雪糕", emoji: "🍦" },
+            { name: "奧利奧雪糕", emoji: "🍨" },
+            { name: "豬肉泡菜披薩", emoji: "🍕" },
+            { name: "冰淇淋蛋糕", emoji: "🎂" },
+            { name: "桃子冰茶", emoji: "🍑" },
+            { name: "水果撈", emoji: "🥣" },
+            { name: "芋泥冰", emoji: "🍧" },
+            { name: "葡萄可爾必思", emoji: "🍇" },
+            { name: "辣炒年糕", emoji: "🍡" },
+            { name: "星冰樂", emoji: "🥤" },
+            { name: "西瓜氣泡養樂多", emoji: "🍉" }
+        ];
+
+        // Default 5 Dice Data mapped with foods
+        const defaultDiceData = [
+            [
+                { name: "螺絲粉", emoji: "🍜" },
+                { name: "自熱火鍋", emoji: "🍲" },
+                { name: "泡麵", emoji: "🍜" },
+                { name: "豬肉泡菜披薩", emoji: "🍕" },
+                { name: "水果撈", emoji: "🥣" },
+                { name: "辣炒年糕", emoji: "🍡" }
+            ],
+            [
+                { name: "辣條", emoji: "🥢" },
+                { name: "糖葫蘆", emoji: "🍡" },
+                { name: "慕斯蛋糕", emoji: "🍰" },
+                { name: "提拉米蘇", emoji: "🧁" },
+                { name: "柳橙果粒加椰果", emoji: "🍹" },
+                { name: "珍珠奶茶", emoji: "🧋" }
+            ],
+            [
+                { name: "火雞面", emoji: "🔥" },
+                { name: "羊肉串", emoji: "🍢" },
+                { name: "雞肉串", emoji: "🍡" },
+                { name: "奶團丸子", emoji: "🍡" },
+                { name: "芋泥啵啵", emoji: "🍧" },
+                { name: "葡萄可爾必思", emoji: "🍇" }
+            ],
+            [
+                { name: "自熱火鍋", emoji: "🍲" },
+                { name: "螺絲粉", emoji: "🍜" },
+                { name: "火雞面", emoji: "🔥" },
+                { name: "布丁雪糕", emoji: "🍦" },
+                { name: "奧利奧雪糕", emoji: "🍨" },
+                { name: "星冰樂", emoji: "🥤" }
+            ],
+            [
+                { name: "提拉米蘇", emoji: "🧁" },
+                { name: "糖葫蘆", emoji: "🍡" },
+                { name: "芋泥啵啵", emoji: "🍧" },
+                { name: "布丁雪糕", emoji: "🍦" },
+                { name: "西瓜氣泡養樂多", emoji: "🍉" },
+                { name: "芋泥冰", emoji: "🍧" }
+            ]
+        ];
+
+        // Global State Variables
+        let diceFoods = JSON.parse(JSON.stringify(defaultDiceData));
+        let lockedDice = [false, false, false, false, false];
+        let activeTab = 0;
+        let selectedFaceIdx = 0;
+        let isRolling = [false, false, false, false, false];
+        let currentResults = [null, null, null, null, null];
+        let userApiKey = localStorage.getItem('gemini_api_key') || "";
+        let currentRating = 5;
+
+        // Face Rotation Angles
+        const faceRotations = [
+            { x: 0, y: 0 },       // Face 1
+            { x: 0, y: 180 },     // Face 2
+            { x: 0, y: 90 },      // Face 3
+            { x: 0, y: -90 },     // Face 4
+            { x: -90, y: 0 },     // Face 5
+            { x: 90, y: 0 }       // Face 6
+        ];
+
+        // Render Dice Faces
+        function renderDice(diceIdx) {
+            const diceEl = document.getElementById(`dice-${diceIdx}`);
+            if (!diceEl) return;
+            
+            diceEl.innerHTML = '';
+            diceFoods[diceIdx].forEach((food, index) => {
+                const face = document.createElement('div');
+                face.className = `dice-face face-${index + 1}`;
+                face.innerHTML = `
+                    <div class="text-[9px] font-black text-orange-400 absolute top-1 left-1.5">${index + 1}</div>
+                    <div class="text-2xl sm:text-3xl my-0.5 transform hover:scale-110 transition-transform">${food.emoji}</div>
+                    <div class="font-extrabold text-slate-800 text-[11px] text-center truncate w-full px-1">${food.name}</div>
+                `;
+                diceEl.appendChild(face);
+            });
+        }
+
+        // Toggle Dice Lock
+        function toggleLock(diceIdx) {
+            lockedDice[diceIdx] = !lockedDice[diceIdx];
+            const btn = document.getElementById(`lockBtn-${diceIdx}`);
+            const container = document.getElementById(`diceContainer-${diceIdx}`);
+            
+            if (lockedDice[diceIdx]) {
+                btn.className = "text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-amber-400 text-slate-900 shadow-sm";
+                container.classList.add('dice-locked');
+                showToast(`已鎖定第 ${diceIdx + 1} 顆骰子 (${currentResults[diceIdx]?.name || '食物'})`);
+            } else {
+                btn.className = "text-xs px-2 py-0.5 rounded-full font-bold transition-all bg-slate-100 text-slate-600 hover:bg-amber-100";
+                container.classList.remove('dice-locked');
+            }
+        }
+
+        // Render Input Fields for Tab
+        function renderInputFields() {
+            const container = document.getElementById('faceInputsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            diceFoods[activeTab].forEach((food, index) => {
+                const div = document.createElement('div');
+                div.className = "bg-orange-50/60 p-1.5 rounded-xl border border-orange-200 flex items-center gap-1 hover:border-orange-400 transition-colors";
+                div.innerHTML = `
+                    <span class="text-[10px] font-black text-slate-400 w-3 text-center">${index + 1}</span>
+                    <input type="text" value="${food.emoji}" data-idx="${index}" class="emoji-inp w-6 text-center text-xs bg-white text-slate-800 rounded border border-orange-200 py-0.5 focus:outline-none focus:border-orange-400">
+                    <input type="text" value="${food.name}" data-idx="${index}" class="name-inp flex-1 font-bold text-[11px] text-slate-700 bg-white rounded border border-orange-200 px-1 py-0.5 focus:outline-none focus:border-orange-400 truncate">
+                    <button onclick="openModalForFace(${index})" class="text-xs text-orange-500 hover:bg-orange-100 p-1 rounded transition-colors" title="圖庫選擇">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+
+            document.querySelectorAll('.name-inp').forEach(inp => {
+                inp.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    diceFoods[activeTab][idx].name = e.target.value || "美食";
+                    renderDice(activeTab);
+                });
+            });
+
+            document.querySelectorAll('.emoji-inp').forEach(inp => {
+                inp.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    diceFoods[activeTab][idx].emoji = e.target.value || "🍽️";
+                    renderDice(activeTab);
+                });
+            });
+        }
+
+        // Switch Tab for 5 Dice Configuration
+        function switchDiceTab(idx) {
+            activeTab = idx;
+            for (let i = 0; i < 5; i++) {
+                const tabBtn = document.getElementById(`tab-${i}`);
+                if (tabBtn) {
+                    if (i === idx) {
+                        tabBtn.className = "flex-1 py-1 text-[11px] font-black rounded-xl transition-all bg-orange-400 text-slate-900 shadow-sm";
+                    } else {
+                        tabBtn.className = "flex-1 py-1 text-[11px] font-bold rounded-xl transition-all text-slate-500 hover:text-slate-800";
+                    }
+                }
+            }
+            renderInputFields();
+        }
+
+        // Roll Single Dice
+        function rollSingleDice(diceIdx, delay = 0) {
+            if (isRolling[diceIdx] || lockedDice[diceIdx]) return;
+
+            isRolling[diceIdx] = true;
+            const diceEl = document.getElementById(`dice-${diceIdx}`);
+            const shadowEl = document.getElementById(`shadow-${diceIdx}`);
+
+            setTimeout(() => {
+                if (shadowEl) shadowEl.classList.add('rolling-shadow');
+                playDiceRollSound();
+
+                const targetIdx = Math.floor(Math.random() * 6);
+                const targetRot = faceRotations[targetIdx];
+
+                const extraRounds = 4 + Math.floor(Math.random() * 3);
+                const totalX = targetRot.x + (extraRounds * 360);
+                const totalY = targetRot.y + (extraRounds * 360);
+
+                if (diceEl) diceEl.style.transform = `rotateX(${totalX}deg) rotateY(${totalY}deg)`;
+
+                setTimeout(() => {
+                    isRolling[diceIdx] = false;
+                    if (shadowEl) shadowEl.classList.remove('rolling-shadow');
+                    currentResults[diceIdx] = diceFoods[diceIdx][targetIdx];
+
+                    if (!isRolling.includes(true)) {
+                        updateStoryDisplay();
+                        playVictorySound();
+                        confetti({
+                            particleCount: 50,
+                            spread: 60,
+                            origin: { y: 0.7 }
+                        });
+                    }
+                }, 2800);
+            }, delay);
+        }
+
+        // Roll All Unlocked Dice
+        function rollAllDice() {
+            if (isRolling.includes(true)) return;
+            
+            const btn = document.getElementById('rollAllBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+            }
+
+            let rollCount = 0;
+            for (let i = 0; i < 5; i++) {
+                if (!lockedDice[i]) {
+                    rollSingleDice(i, rollCount * 100);
+                    rollCount++;
+                }
+            }
+
+            if (rollCount === 0) {
+                showToast('所有骰子皆已鎖定，請解鎖再搖動！');
+            }
+
+            setTimeout(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            }, 3200);
+        }
+
+        // Update Food Badges
+        function updateStoryDisplay() {
+            if (currentResults.includes(null)) return;
+
+            const placeholder = document.getElementById('resultPlaceholder');
+            const content = document.getElementById('resultContent');
+            if (placeholder) placeholder.classList.add('hidden');
+            if (content) content.classList.remove('hidden');
+
+            for (let i = 0; i < 5; i++) {
+                const emojiEl = document.getElementById(`resEmoji${i}`);
+                const nameEl = document.getElementById(`resName${i}`);
+                if (emojiEl) emojiEl.textContent = currentResults[i].emoji;
+                if (nameEl) nameEl.textContent = currentResults[i].name;
+            }
+        }
+
+        // Gemini AI Story Generation
+        async function generateAIStory() {
+            if (currentResults.includes(null)) {
+                showToast('請先搖動骰子選出 5 個美食！');
+                return;
+            }
+
+            const storyText = document.getElementById('combinedStoryText');
+            const storyLoading = document.getElementById('storyLoading');
+            const style = document.getElementById('storyStyleSelect')?.value || '爆笑無厘頭喜劇';
+
+            if (storyLoading) storyLoading.classList.remove('hidden');
+            if (storyText) storyText.textContent = '';
+
+            const prompt = `你是一位超級幽默爆笑的故事大師。請使用以下 5 個美食元素，創作一篇 250 字左右的【${style}】極短篇爆笑故事：
+            1. 地點背景：${currentResults[0].emoji} ${currentResults[0].name}
+            2. 故事主角：${currentResults[1].emoji} ${currentResults[1].name}
+            3. 關鍵道具：${currentResults[2].emoji} ${currentResults[2].name}
+            4. 衝突挑戰：${currentResults[3].emoji} ${currentResults[3].name}
+            5. 奇幻轉折：${currentResults[4].emoji} ${currentResults[4].name}
+
+            要求：
+            - 情節必須極具創意、反轉、讓人忍俊不禁！
+            - 使用繁體中文回答，段落清晰，加入精美的 Emoji 裝飾。`;
+
+            try {
+                const apiKey = userApiKey || "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const result = await response.json();
+                if (storyLoading) storyLoading.classList.add('hidden');
+
+                if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    if (storyText) storyText.textContent = text;
+                    confetti({ particleCount: 70, spread: 80 });
+                } else if (result.error) {
+                    if (storyText) storyText.textContent = `⚠️ API 錯誤: ${result.error.message || '請點擊右上角 API Key 設定填入金鑰'}`;
+                } else {
+                    if (storyText) storyText.textContent = "⚠️ 生成失敗，請確定已設定 API Key 或重新嘗試！";
+                }
+            } catch (err) {
+                if (storyLoading) storyLoading.classList.add('hidden');
+                if (storyText) storyText.textContent = `⚠️ 連線異常: ${err.message}`;
+            }
+        }
+
+        // Imagen / Gemini Image Generation
+        async function generateAIIllustration() {
+            const currentStory = document.getElementById('combinedStoryText')?.textContent;
+            if (!currentStory || currentStory.includes('點擊上方')) {
+                showToast('請先生成故事，再製作插畫！');
+                return;
+            }
+
+            const imgPlaceholder = document.getElementById('imagePlaceholder');
+            const imgLoading = document.getElementById('imageLoading');
+            const generatedImg = document.getElementById('generatedImg');
+
+            if (imgPlaceholder) imgPlaceholder.classList.add('hidden');
+            if (generatedImg) generatedImg.classList.add('hidden');
+            if (imgLoading) imgLoading.classList.remove('hidden');
+
+            const foodSummary = currentResults.map(f => f.name).join(', ');
+            const imagePrompt = `A vivid, cute digital storybook illustration featuring cartoon food characters: ${foodSummary}. Vibrant macro colors, whimsical cartoon style, Pixar animation aesthetic.`;
+
+            try {
+                const apiKey = userApiKey || "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: imagePrompt }] }],
+                        generationConfig: {
+                            responseModalities: ['IMAGE'],
+                            imageConfig: { aspectRatio: "16:9" }
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                if (imgLoading) imgLoading.classList.add('hidden');
+
+                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (part) {
+                    const imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                    if (generatedImg) {
+                        generatedImg.src = imageUrl;
+                        generatedImg.classList.remove('hidden');
+                    }
+                    showToast('🎉 AI 故事插畫繪製成功！');
+                } else {
+                    if (imgPlaceholder) imgPlaceholder.classList.remove('hidden');
+                    showToast('⚠️ 插畫生成失敗，請檢查 API Key 權限');
+                }
+            } catch (err) {
+                if (imgLoading) imgLoading.classList.add('hidden');
+                if (imgPlaceholder) imgPlaceholder.classList.remove('hidden');
+                showToast(`⚠️ 插畫生成錯誤: ${err.message}`);
+            }
+        }
+
+        // API Key Storage Logic
+        function openApiKeyModal() {
+            const input = document.getElementById('apiKeyInput');
+            if (input) input.value = userApiKey;
+            document.getElementById('apiKeyModal')?.classList.remove('hidden');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('apiKeyModal')?.classList.add('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput')?.value.trim() || "";
+            userApiKey = key;
+            localStorage.setItem('gemini_api_key', key);
+            closeApiKeyModal();
+            updateApiKeyBtnStatus();
+            showToast('Gemini API Key 已儲存成功！');
+        }
+
+        function updateApiKeyBtnStatus() {
+            const statusEl = document.getElementById('navApiKeyStatus');
+            if (statusEl) {
+                statusEl.textContent = userApiKey ? "Key 已設定" : "API Key";
+            }
+        }
+
+        // Preset Modal Controls
+        function renderPresetModal() {
+            const list = document.getElementById('presetFoodList');
+            if (!list) return;
+            list.innerHTML = '';
+            foodLibrary.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-orange-50 hover:bg-amber-100 border border-orange-200 rounded-2xl p-2 cursor-pointer transition-all flex flex-col items-center text-center";
+                card.innerHTML = `
+                    <span class="text-xl mb-0.5">${item.emoji}</span>
+                    <span class="font-bold text-[10px] text-slate-800 truncate w-full">${item.name}</span>
+                `;
+                card.addEventListener('click', () => {
+                    diceFoods[activeTab][selectedFaceIdx] = { ...item };
+                    renderDice(activeTab);
+                    renderInputFields();
+                    closeModal();
+                    showToast(`已更新「骰子 ${activeTab + 1}」第 ${selectedFaceIdx + 1} 面為：${item.name}`);
+                });
+                list.appendChild(card);
+            });
+        }
+
+        function openModalForFace(faceIdx) {
+            selectedFaceIdx = faceIdx;
+            openModal();
+        }
+
+        function openModal() {
+            document.getElementById('presetsModal')?.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('presetsModal')?.classList.add('hidden');
+        }
+
+        function resetAllPresets() {
+            diceFoods = JSON.parse(JSON.stringify(defaultDiceData));
+            for (let i = 0; i < 5; i++) renderDice(i);
+            renderInputFields();
+            showToast('已重置為預設 5 顆美食骰子！');
+        }
+
+        function copyStory() {
+            const rawText = document.getElementById('combinedStoryText')?.innerText || "";
+            const textToCopy = `🎲 【5D 美食 AI 爆笑故事】\n元素：${currentResults.map(r => r ? r.name : '').join(' + ')}\n\n${rawText}`;
+
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('已複製故事文字至剪貼簿！');
+            } catch (err) {
+                showToast('複製失敗，請手動複製');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            if (toast && toastMsg) {
+                toastMsg.textContent = msg;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 2500);
+            }
+        }
+
+        // Feedback Rating
+        function setRating(rating) {
+            currentRating = rating;
+            const stars = document.querySelectorAll('.star-icon');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('opacity-30');
+                } else {
+                    star.classList.add('opacity-30');
+                }
+            });
+            showToast(`已評分 ${rating} 顆星！🌟`);
+        }
+
+        function handleFeedbackSubmit(e) {
+            e.preventDefault();
+            showToast('🎉 感謝您的寶貴回饋與食物許願！');
+            e.target.reset();
+        }
+
+        // Global Key Binding
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'SELECT') {
+                e.preventDefault();
+                rollAllDice();
+            }
+        });
+
+        // Initialize Application
+        window.onload = function() {
+            for (let i = 0; i < 5; i++) {
+                renderDice(i);
+            }
+            renderInputFields();
+            renderPresetModal();
+            updateApiKeyBtnStatus();
+        };
+    </script>
+</body>
+</html>
